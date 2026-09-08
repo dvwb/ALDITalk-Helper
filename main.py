@@ -1,0 +1,2 @@
+RUFNUMMER = config["RUFNUMMER"]
+PASSWORT = config["PASSWORT"]

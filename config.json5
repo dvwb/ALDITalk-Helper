@@ -1,0 +1,5 @@
+{
+  "PASSWORT": "",
+  "RUFNUMMER": "",
+  "TELEGRAM_BOT_TOKEN": "" // Token-Value = true | Kein Token = Option ausgeschalten
+}
