@@ -1,6 +1,6 @@
 {
-  "PASSWORT": "",
   "RUFNUMMER": "",
+  "PASSWORT": "",
   "HEADLESS": false, // true = Ja | false = Nein (Browser soll Sichtbar sein Ja/Nein)
   "TELEGRAM_BOT_TOKEN": "" // Token-Value = true | Kein Token = Option ausgeschalten
 }
