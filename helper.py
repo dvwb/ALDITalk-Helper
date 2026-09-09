@@ -144,51 +144,63 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
 def click_while_blue(page, selector, max_clicks=2, wait_ms=7500):
     clicks = 0
 
-    blue_colors = {
-        "rgb(32, 43, 120)",  # #202B78
-        "rgb(61, 71, 138)",  # #3D478A
-        "rgb(82, 91, 150)",  # #525B96
-    }
-
     while clicks < max_clicks:
         try:
-            button = page.locator(selector).first
-            button.wait_for(state="visible", timeout=5000)
+            host = page.locator(selector).first
+            host.wait_for(state="visible", timeout=5000)
 
-            inner = button.locator("button").first
+            inner = host.locator("button").first
             inner.wait_for(state="visible", timeout=5000)
 
-            info = inner.evaluate(
+            info = host.evaluate(
                 """
-                element => {
-                    const style = getComputedStyle(element);
+                host => {
+                    const hostStyle = getComputedStyle(host);
+                    const button = host.shadowRoot?.querySelector("button");
+
+                    if (!button) {
+                        return {
+                            hostBackground: hostStyle.background,
+                            hostBackgroundColor: hostStyle.backgroundColor,
+                            hostBackgroundImage: hostStyle.backgroundImage,
+                            buttonFound: false
+                        };
+                    }
+
+                    const buttonStyle = getComputedStyle(button);
 
                     return {
-                        backgroundColor: style.backgroundColor,
-                        backgroundImage: style.backgroundImage,
-                        disabled: element.disabled,
-                        ariaDisabled: element.getAttribute("aria-disabled")
+                        hostBackground: hostStyle.background,
+                        hostBackgroundColor: hostStyle.backgroundColor,
+                        hostBackgroundImage: hostStyle.backgroundImage,
+
+                        buttonBackground: buttonStyle.background,
+                        buttonBackgroundColor: buttonStyle.backgroundColor,
+                        buttonBackgroundImage: buttonStyle.backgroundImage,
+                        buttonColor: buttonStyle.color,
+
+                        disabled: button.disabled,
+                        ariaDisabled: button.getAttribute("aria-disabled")
                     };
                 }
                 """
             )
 
-            print(f"[HELPER] Button: {info}")
+            print(f"[HELPER] Button state: {info}")
 
-            background_image = info["backgroundImage"] or ""
-            background_color = info["backgroundColor"] or ""
+            background_image = info.get("buttonBackgroundImage") or ""
 
-            is_blue = any(
-                color in background_image
-                or color in background_color
-                for color in blue_colors
+            is_blue = (
+                "rgb(32, 43, 120)" in background_image
+                or "rgb(61, 71, 138)" in background_image
+                or "rgb(82, 91, 150)" in background_image
             )
 
             if not is_blue:
                 print("[HELPER] Button ist nicht mehr blau. Stoppe.")
                 break
 
-            if info["disabled"] or info["ariaDisabled"] == "true":
+            if info.get("disabled") or info.get("ariaDisabled") == "true":
                 print("[HELPER] Button ist deaktiviert. Stoppe.")
                 break
 
