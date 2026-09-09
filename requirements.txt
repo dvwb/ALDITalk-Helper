@@ -1,5 +1,3 @@
-requests
 playwright
 json5
-curl-cffi
 ruff
