@@ -1,3 +1,2 @@
 playwright
 json5
-ruff
