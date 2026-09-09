@@ -6,7 +6,7 @@ import urllib.request
 import json5
 from playwright.sync_api import sync_playwright
 from playwright.sync_api import Error as PlaywrightError
-from helper import interact_element, has_exact_text, has_less_than_1gb, wait_and_click
+from helper import interact_element, has_exact_text, has_less_than_1gb, wait_and_click, click_while_blue
 
 # CONFIGLOADER
 with open("config.json5", "r") as f:
@@ -18,7 +18,7 @@ PASSWORT = config["PASSWORT"]
 TELEGRAM_BOT_TOKEN = config.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = config.get("TELEGRAM_CHAT_ID", "")
 
-CHECK_INTERVAL = float(config.get("CHECK_INTERVAL", 2)) # DEFAULT 2 MINUTEN
+CHECK_INTERVAL = float(config.get("CHECK_INTERVAL", 2))  # DEFAULT 2 MINUTEN
 UEBERSICHT_URL = "https://www.alditalk-kundenportal.de/portal/auth/buchungsuebersicht/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
@@ -43,10 +43,9 @@ def send_telegram(message):
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
-        data = urllib.parse.urlencode({
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message
-        }).encode()
+        data = urllib.parse.urlencode(
+            {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+        ).encode()
 
         request = urllib.request.Request(url, data=data, method="POST")
 
@@ -57,80 +56,122 @@ def send_telegram(message):
         print(f"[TELEGRAM] Fehler: {e}")
         return False
 
-def check_data_volume(page):
-    print("\nDatenvolumen wird überprüft...")
 
-    page.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
-    page.reload(timeout=10000, wait_until="domcontentloaded")
+def main():
+    with sync_playwright() as p:
+        try:
+            browser = p.chromium.launch(headless=HEADLESS)
+            context = browser.new_context(user_agent=UA)
+            p = context.new_page()
 
-    if has_less_than_1gb(page):
-        print("Weniger als 1GB vorhanden.")
-        send_telegram("⚠️ ALDITalk: Weniger als 1 GB Datenvolumen vorhanden.")
-        return True
-
-    print("Nachfüllung nicht erforderlich.")
-    return False
-
-with sync_playwright() as p:
-    try:
-        browser = p.chromium.launch(headless=HEADLESS)
-        context = browser.new_context(user_agent=UA)
-        p = context.new_page()
-
-        # ÜBERSICHT-URL ÖFFNEN
-        p.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
-
-        # COOKIE BANNER HANDLEN
-        interact_element(p, DENY_COOKIES)
-
-        # LOGIN
-        interact_element(p, RUFNUMMER_INPUT, RUFNUMMER)
-        interact_element(p, PASSWORT_INPUT, PASSWORT)
-        interact_element(p, LOGIN_BUTTONCLASS)
-
-        if has_exact_text(p, "Anmeldung fehlgeschlagen"):
-            print(
-                f"\n"
-                f"Die Anmeldung bei ALDITalk ist fehlgeschlagen."
-                f"\nBitte überprüfe deine Anmeldedaten in der Config."
-            )
-            message = (
-                "❌ ALDITalk Anmeldung fehlgeschlagen.\n"
-                "Überprüfe deine Anmeldedaten in der Config."
-            )
-            send_telegram(message)
-            raise Exception("Login fehlgeschlagen")
-
-        print("\nAnmeldung erfolgreich.\nDatenvolumen wird überprüft...")
-        time.sleep(5)
-        p.reload(timeout=10000, wait_until="domcontentloaded")
-
-        if has_less_than_1gb(p):
-            print(f"Weniger als 1GB vorhanden.\nStarte Nachfüllungsprozess...")
-            p.goto(DASHBOARD_URL, wait_until="domcontentloaded")
-
-            time.sleep(2)
-            if wait_and_click(p, 'one-button[slot="action"]'):
-                time.sleep(2)
-            else:
-                raise Exception("Nachbuchen-Button konnte nicht geklickt werden.")
-            time.sleep(2)
-
+            # ÜBERSICHT-URL ÖFFNEN
+            print("[+] Öffne ALDITalk Portal...")
             p.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
-            p.reload(timeout=10000, wait_until="domcontentloaded")
 
-            if has_less_than_1gb(p):
-                print(f"Nachfüllung hat nicht funktioniert.\nWird erneut versucht...")
+            # COOKIE BANNER HANDLEN
+            interact_element(p, DENY_COOKIES)
+            print("[+] Cookie-Banner abgelehnt")
 
-            print(f"Nachfüllung erfolgreich! +1GB")
-        else:
-            print(f"Nachfüllung nicht erforderlich")
+            # LOGIN
+            print("[+] Führe Login aus...")
+            interact_element(p, RUFNUMMER_INPUT, RUFNUMMER)
+            interact_element(p, PASSWORT_INPUT, PASSWORT)
+            interact_element(p, LOGIN_BUTTONCLASS)
 
-    except PlaywrightError as e:
-        if "Executable doesn't exist" in str(e):
-            print(
-                "Playwright konnte nicht starten.\n"
-                "Hast du schon 'playwright install' in diesem Verzeichnis ausgeführt?"
+            if has_exact_text(p, "Anmeldung fehlgeschlagen"):
+                print(
+                    f"\n"
+                    f"Die Anmeldung bei ALDITalk ist fehlgeschlagen."
+                    f"\nBitte überprüfe deine Anmeldedaten in der Config."
+                )
+                message = (
+                    "❌ ALDITalk Anmeldung fehlgeschlagen.\n"
+                    "Überprüfe deine Anmeldedaten in der Config."
+                )
+                send_telegram(message)
+                raise Exception("Login fehlgeschlagen")
+
+            print("\nAnmeldung erfolgreich.")
+            send_telegram(
+                "✅ ALDITalk Bot gestartet und erfolgreich angemeldet."
+                "Überwachung läuft."
             )
-        else:
-            print(f"Playwright Error: {e}")
+            time.sleep(5)
+
+            while True:
+                try:
+                    print("\nDatenvolumen wird überprüft...")
+                    p.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
+                    time.sleep(4)
+                    p.reload(timeout=10000, wait_until="domcontentloaded")
+
+                    if has_less_than_1gb(p):
+                        print(
+                            f"Weniger als 1GB vorhanden.\nStarte Nachfüllungsprozess..."
+                        )
+                        send_telegram(
+                            "⚠️ ALDITalk: Weniger als 1 GB Datenvolumen. Starte Nachfüllung..."
+                        )
+
+                        p.goto(DASHBOARD_URL, wait_until="domcontentloaded")
+                        time.sleep(5)
+
+                        clicks = click_while_blue(
+                            p,
+                            'one-button[slot="action"]',
+                            max_clicks=2,
+                            wait_ms=7500,
+                        )
+
+                        if clicks == 0:
+                            send_telegram(
+                                "❌ ALDITalk: Nachbuchen-Button war nicht blau oder konnte nicht gek lickt werden."
+                            )
+                            raise Exception(
+                                "Nachbuchen-Button war nicht blau oder konnte nicht geklickt werden."
+                            )
+                        print(f"[+] Nachbuchen-Button wurde {clicks}x geklickt.")
+                        time.sleep(2)
+
+                        p.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
+                        p.reload(timeout=10000, wait_until="domcontentloaded")
+
+                        if has_less_than_1gb(p):
+                            print(
+                                f"Nachfüllung hat nicht funktioniert.\nWird beim nächsten Intervall ({CHECK_INTERVAL} Minuten) erneut versucht..."
+                            )
+                            send_telegram(
+                                f"❌ ALDITalk: Nachfüllung hat nicht funktioniert.\nWird beim nächsten Intervall ({CHECK_INTERVAL} Minuten) erneut versucht."
+                            )
+                        else:
+                            print(f"Nachfüllung erfolgreich! +{clicks}GB")
+                            send_telegram(
+                                f"✅ ALDITalk: Nachfüllung erfolgreich! (+{clicks}GB)"
+                            )
+                    else:
+                        print(f"Nachfüllung nicht erforderlich")
+
+                except Exception as loop_error:
+                    print(f"Fehler während der Intervall-Prüfung: {loop_error}")
+                    send_telegram(
+                        f"❌ ALDITalk Fehler während der Prüfung: {loop_error}"
+                    )
+
+                print(f"Warte {CHECK_INTERVAL} Minuten bis zur nächsten Überprüfung...")
+                time.sleep(CHECK_INTERVAL * 60)
+
+        except PlaywrightError as e:
+            if "Executable doesn't exist" in str(e):
+                print(
+                    "Playwright konnte nicht starten.\n"
+                    "Hast du schon 'playwright install' in diesem Verzeichnis ausgeführt?"
+                )
+            else:
+                print(f"Playwright Error: {e}")
+                send_telegram(f"❌ ALDITalk Playwright Fehler: {e}")
+        except Exception as e:
+            print(f"Allgemeiner Fehler: {e}")
+
+
+if __name__ == "__main__":
+    main()
