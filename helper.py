@@ -141,6 +141,82 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
     print(f"Konnte {selector} nicht klicken.")
     return False
 
+def click_while_blue(page, selector, max_clicks=20, wait_ms=1000):
+    clicks = 0
+
+    while clicks < max_clicks:
+        try:
+            button = page.locator(selector).first
+            button.wait_for(state="visible", timeout=5000)
+
+            background = button.evaluate(
+                """
+                element => {
+                    const style = getComputedStyle(element);
+                    return {
+                        backgroundColor: style.backgroundColor,
+                        backgroundImage: style.backgroundImage,
+                        opacity: style.opacity,
+                        pointerEvents: style.pointerEvents
+                    };
+                }
+                """
+            )
+
+            print(f"[HELPER] Button background: {background}")
+
+            background_color = background["backgroundColor"]
+            background_image = background["backgroundImage"]
+
+            blue_colors = {
+                "rgb(32, 43, 120)",    # #202B78
+                "rgb(61, 71, 138)",    # #3D478A
+                "rgb(82, 91, 150)",    # #525B96
+            }
+
+            is_blue = (
+                background_color.lower() in blue_colors
+                or (
+                    background_image
+                    and any(
+                        color in background_image.lower()
+                        for color in [
+                            "#202b78",
+                            "#3d478a",
+                            "#525b96",
+                        ]
+                    )
+                )
+            )
+
+            if not is_blue:
+                print("[HELPER] Button ist nicht mehr blau. Stoppe.")
+                break
+
+            disabled = button.get_attribute("disabled")
+            aria_disabled = button.get_attribute("aria-disabled")
+
+            if disabled is not None or aria_disabled == "true":
+                print("[HELPER] Button ist deaktiviert. Stoppe.")
+                break
+
+            print(f"[HELPER] Klicke blauen Button ({clicks + 1}/{max_clicks})...")
+            button.click()
+
+            clicks += 1
+
+            page.wait_for_timeout(wait_ms)
+
+        except PlaywrightTimeoutError:
+            print("[HELPER] Button nicht mehr vorhanden/sichtbar. Stoppe.")
+            break
+
+        except PlaywrightError as e:
+            print(f"[HELPER] Fehler beim Klicken: {e}")
+            break
+
+    print(f"[HELPER] Insgesamt {clicks}x geklickt.")
+    return clicks
 
 def has_less_than_1gb(page, timeout=2500):
     try:
