@@ -1,0 +1,5 @@
+.idea/
+.idea-backup/
+__pycache__/
+.ruff_cache/
+.venv/
