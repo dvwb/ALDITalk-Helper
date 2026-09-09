@@ -1,4 +1,8 @@
 import time
+import urllib
+import urllib.parse
+import urllib.request
+
 import json5
 from playwright.sync_api import sync_playwright
 from playwright.sync_api import Error as PlaywrightError
@@ -10,8 +14,11 @@ with open("config.json5", "r") as f:
 
 RUFNUMMER = config["RUFNUMMER"]
 PASSWORT = config["PASSWORT"]
-TELEGRAM_BOT_TOKEN = config["TELEGRAM_BOT_TOKEN"]
 
+TELEGRAM_BOT_TOKEN = config.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = config.get("TELEGRAM_CHAT_ID", "")
+
+CHECK_INTERVAL = float(config.get("CHECK_INTERVAL", 2)) # DEFAULT 2 MINUTEN
 UEBERSICHT_URL = "https://www.alditalk-kundenportal.de/portal/auth/buchungsuebersicht/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
@@ -29,12 +36,48 @@ DENY_COOKIES = "uc-deny-all-button"
 # SEITE: DASHBOARD_URL
 PLUS_ICON = 'one-icon[name="plus"]'
 
+def send_telegram(message):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
+
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+        data = urllib.parse.urlencode({
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": message
+        }).encode()
+
+        request = urllib.request.Request(url, data=data, method="POST")
+
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return response.status == 200
+
+    except Exception as e:
+        print(f"[TELEGRAM] Fehler: {e}")
+        return False
+
+def check_data_volume(page):
+    print("\nDatenvolumen wird überprüft...")
+
+    page.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
+    page.reload(timeout=10000, wait_until="domcontentloaded")
+
+    if has_less_than_1gb(page):
+        print("Weniger als 1GB vorhanden.")
+        send_telegram("⚠️ ALDI TALK: Weniger als 1 GB Datenvolumen vorhanden.")
+        return True
+
+    print("Nachfüllung nicht erforderlich.")
+    return False
+
 with sync_playwright() as p:
     try:
         browser = p.chromium.launch(headless=HEADLESS)
-        p = browser.new_page()
+        context = browser.new_context(user_agent=UA)
+        p = context.new_page()
 
-        # LOGIN-URL ÖFFNEN
+        # ÜBERSICHT-URL ÖFFNEN
         p.goto(UEBERSICHT_URL, wait_until="domcontentloaded")
 
         # COOKIE BANNER HANDLEN
@@ -51,6 +94,12 @@ with sync_playwright() as p:
                 f"Die Anmeldung bei ALDITalk ist fehlgeschlagen.\nRufnummer: {RUFNUMMER}\nPasswort: {PASSWORT}"
                 f"\nBitte überprüfe deine Anmeldedaten in der Config."
             )
+            message = (
+                "❌ ALDITalk Anmeldung fehlgeschlagen.\n"
+                "Überprüfe deine Anmeldedaten in der Config."
+            )
+            send_telegram(message)
+            raise Exception("Login fehlgeschlagen")
 
         print("\nAnmeldung erfolgreich.\nDatenvolumen wird überprüft...")
         time.sleep(5)
