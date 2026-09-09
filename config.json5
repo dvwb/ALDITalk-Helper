@@ -1,6 +1,8 @@
 {
-  "RUFNUMMER": "",
-  "PASSWORT": "",
+  "RUFNUMMER": "", // Deine ALDITalk Rufnummer
+  "PASSWORT": "", // Dein ALDITalk Passwort
   "HEADLESS": false, // true = Ja | false = Nein (Browser soll Sichtbar sein Ja/Nein)
-  "TELEGRAM_BOT_TOKEN": "" // Token-Value = true | Kein Token = Option ausgeschalten
+  "TELEGRAM_BOT_TOKEN": "", // Token-Value = true | Kein Token = Option ausgeschalten | @BotFather
+  "TELEGRAM_CHAT_ID": "",
+  "CHECK_INTERVAL": "2" // Wie oft soll der Helper dein Datenvolumen überprüfen in X Minuten
 }
