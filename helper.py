@@ -129,7 +129,9 @@ def has_exact_text(page, text, timeout=2500):
 def wait_and_click(page, selector, timeout=5000, retries=5):
     for attempt in range(retries):
         try:
-            print(f"Versuche, auf {selector} zu klicken (Versuch {attempt+1}/{retries})...")
+            print(
+                f"Versuche, auf {selector} zu klicken (Versuch {attempt + 1}/{retries})..."
+            )
             page.wait_for_selector(selector, timeout=timeout)
             page.click(selector)
             return True
@@ -138,6 +140,7 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
             time.sleep(1)
     print(f"Konnte {selector} nicht klicken.")
     return False
+
 
 def has_less_than_1gb(page, timeout=2500):
     try:
