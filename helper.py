@@ -141,7 +141,7 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
     print(f"Konnte {selector} nicht klicken.")
     return False
 
-def click_while_blue(page, selector, max_clicks=20, wait_ms=1000):
+def click_while_blue(page, selector, max_clicks=2, wait_ms=7500):
     clicks = 0
 
     while clicks < max_clicks:
