@@ -5,4 +5,4 @@
   "TELEGRAM_BOT_TOKEN": "", // Token-Value = true | Kein Token = Option ausgeschalten | @BotFather
   "TELEGRAM_CHAT_ID": "", // Wie man eine Chat-ID kriegt: https://gist.github.com/nafiesl/4ad622f344cd1dc3bb1ecbe468ff9f8a
   "CHECK_INTERVAL": "0.5" // Wie oft soll der Helper dein Datenvolumen überprüfen in X Minuten
-}
+} //                   ^-> 0.5 (Jede 30 Sekunden) ist empfohlen.
