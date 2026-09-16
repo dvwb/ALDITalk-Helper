@@ -2,11 +2,19 @@ import time
 import urllib
 import urllib.parse
 import urllib.request
+import ssl
+import certifi
 
 import json5
 from playwright.sync_api import sync_playwright
 from playwright.sync_api import Error as PlaywrightError
-from helper import interact_element, has_exact_text, has_less_than_1gb, wait_and_click, click_while_blue
+from helper import (
+    interact_element,
+    has_exact_text,
+    has_less_than_1gb,
+    wait_and_click,
+    click_while_blue,
+)
 
 # CONFIGLOADER
 with open("config.json5", "r") as f:
@@ -36,6 +44,7 @@ DENY_COOKIES = "uc-deny-all-button"
 # SEITE: DASHBOARD_URL
 PLUS_ICON = 'one-icon[name="plus"]'
 
+
 def send_telegram(message):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return False
@@ -49,7 +58,9 @@ def send_telegram(message):
 
         request = urllib.request.Request(url, data=data, method="POST")
 
-        with urllib.request.urlopen(request, timeout=10) as response:
+        context = ssl.create_default_context(cafile=certifi.where())
+
+        with urllib.request.urlopen(request, timeout=10, context=context) as response:
             return response.status == 200
 
     except Exception as e:
