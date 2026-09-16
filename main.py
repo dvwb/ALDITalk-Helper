@@ -4,6 +4,7 @@ import urllib.parse
 import urllib.request
 import ssl
 import certifi
+import html
 
 import json5
 from playwright.sync_api import sync_playwright
@@ -96,16 +97,16 @@ def main():
                     f"\nBitte überprüfe deine Anmeldedaten in der Config."
                 )
                 message = (
-                    "❌ ALDITalk Anmeldung fehlgeschlagen.\n"
-                    "Überprüfe deine Anmeldedaten in der Config."
+                    "❌ ALDITalk Anmeldung <b>fehlgeschlagen.</b>\n"
+                    "🤔 Überprüfe deine Anmeldedaten in der Config."
                 )
                 send_telegram(message)
                 raise Exception("Login fehlgeschlagen")
 
             print("\nAnmeldung erfolgreich.")
             send_telegram(
-                "✅ ALDITalk Bot gestartet und erfolgreich angemeldet.\n"
-                "Überwachung läuft."
+                "✅ ALDITalk Bot <b>gestartet</b> und <b>erfolgreich angemeldet.</b>\n"
+                "👀 Überwachung läuft."
             )
             time.sleep(5)
 
@@ -121,7 +122,8 @@ def main():
                             f"Weniger als 1GB vorhanden.\nStarte Nachfüllungsprozess..."
                         )
                         send_telegram(
-                            "⚠️ ALDITalk: Weniger als 1 GB Datenvolumen. Starte Nachfüllung..."
+                            "⚠️ <b>ALDITalk: <u>Weniger als 1 GB Datenvolumen.</u></b>\n"
+                            "🔄 Starte Nachfüllung..."
                         )
 
                         p.goto(DASHBOARD_URL, wait_until="domcontentloaded")
@@ -136,7 +138,7 @@ def main():
 
                         if clicks == 0:
                             send_telegram(
-                                "❌ ALDITalk: Nachbuchen-Button war nicht blau oder konnte nicht gek lickt werden."
+                                "❌ <b>ALDITalk:</b> Nachbuchen-Button war nicht blau oder konnte nicht geklickt werden."
                             )
                             raise Exception(
                                 "Nachbuchen-Button war nicht blau oder konnte nicht geklickt werden."
@@ -152,12 +154,12 @@ def main():
                                 f"Nachfüllung hat nicht funktioniert.\nWird beim nächsten Intervall ({CHECK_INTERVAL} Minuten) erneut versucht..."
                             )
                             send_telegram(
-                                f"❌ ALDITalk: Nachfüllung hat nicht funktioniert.\nWird beim nächsten Intervall ({CHECK_INTERVAL} Minuten) erneut versucht."
+                                f"❌ <b>ALDITalk:</b> Nachfüllung hat nicht funktioniert.\n🔄 Wird beim nächsten Intervall <b>({CHECK_INTERVAL} Minuten)</b> erneut versucht."
                             )
                         else:
                             print(f"Nachfüllung erfolgreich! +{clicks}GB")
                             send_telegram(
-                                f"✅ ALDITalk: Nachfüllung erfolgreich! (+{clicks}GB)"
+                                f"✅ <u>ALDITalk: Nachfüllung erfolgreich!</u> <b>(+{clicks}GB)</b>"
                             )
                     else:
                         print(f"Nachfüllung nicht erforderlich")
@@ -165,7 +167,8 @@ def main():
                 except Exception as loop_error:
                     print(f"Fehler während der Intervall-Prüfung: {loop_error}")
                     send_telegram(
-                        f"<b>❌ ALDITalk Fehler während der Prüfung:</b> <br> <tg-spoiler><code>{loop_error}</code></tg-spoiler>"
+                        "<b>❌ ALDITalk Fehler während der Prüfung:</b>\n"
+                        f"<pre><code class=\"language-python\">{loop_error}</code></pre>"
                     )
 
                 print(f"Warte {CHECK_INTERVAL} Minuten bis zur nächsten Überprüfung...")
@@ -179,7 +182,8 @@ def main():
                 )
             else:
                 print(f"Playwright Error: {e}")
-                send_telegram(f"❌ ALDITalk Playwright Fehler: {e}")
+                send_telegram(f"<b>❌ ALDITalk Playwright Fehler:</b>\n"
+                              f"<pre><code class=\"language-python\">{e}</code></pre>")
         except Exception as e:
             print(f"Allgemeiner Fehler: {e}")
 
