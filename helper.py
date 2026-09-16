@@ -141,6 +141,7 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
     print(f"Konnte {selector} nicht klicken.")
     return False
 
+
 def click_while_blue(page, selector, max_clicks=2, wait_ms=7500):
     clicks = 0
 
@@ -204,10 +205,7 @@ def click_while_blue(page, selector, max_clicks=2, wait_ms=7500):
                 print("[HELPER] Button ist deaktiviert. Stoppe.")
                 break
 
-            print(
-                f"[HELPER] Klicke blauen Button "
-                f"({clicks + 1}/{max_clicks})..."
-            )
+            print(f"[HELPER] Klicke blauen Button ({clicks + 1}/{max_clicks})...")
 
             inner.click()
             clicks += 1
@@ -224,6 +222,7 @@ def click_while_blue(page, selector, max_clicks=2, wait_ms=7500):
 
     print(f"[HELPER] Insgesamt {clicks}x geklickt.")
     return clicks
+
 
 def has_less_than_1gb(page, timeout=2500):
     try:
