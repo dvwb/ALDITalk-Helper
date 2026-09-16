@@ -53,7 +53,7 @@ def send_telegram(message):
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
         data = urllib.parse.urlencode(
-            {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+            {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}
         ).encode()
 
         request = urllib.request.Request(url, data=data, method="POST")
@@ -104,7 +104,7 @@ def main():
 
             print("\nAnmeldung erfolgreich.")
             send_telegram(
-                "✅ ALDITalk Bot gestartet und erfolgreich angemeldet."
+                "✅ ALDITalk Bot gestartet und erfolgreich angemeldet.\n"
                 "Überwachung läuft."
             )
             time.sleep(5)
@@ -165,7 +165,7 @@ def main():
                 except Exception as loop_error:
                     print(f"Fehler während der Intervall-Prüfung: {loop_error}")
                     send_telegram(
-                        f"❌ ALDITalk Fehler während der Prüfung: {loop_error}"
+                        f"<b>❌ ALDITalk Fehler während der Prüfung:</b> <br> <tg-spoiler><code>{loop_error}</code></tg-spoiler>"
                     )
 
                 print(f"Warte {CHECK_INTERVAL} Minuten bis zur nächsten Überprüfung...")
